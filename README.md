@@ -1,2 +1,3 @@
-# DuckShoot
-Arcade game Duck Shoot was our final project of Computer Organisation and Assembly Language(COAL) course.
+# DuckShoot #
+#### Special thanks to Haider ####
+This game was developed in x8086 16-bit assembly language.

@@ -7,19 +7,18 @@ Shot dw 0
 Score dw 0
 Round dw 0
 choice db 0
-Duck1TL dw 0
-Duck1TR dw 0
-Duck1BL dw 0
-Duck1BR dw 0
-Duck2TL dw 0
-Duck2TR dw 0
-Duck2BL dw 0
-Duck2BR dw 0
+Duck1L dw 0
+Duck1R dw 0
+Duck1T dw 0
+Duck1B dw 0
+Duck2L dw 0
+Duck2R dw 0
+Duck2T dw 0
+Duck2B dw 0
 Bullets dw 3
 TopScore dw 4500
 ShotDead dw 0
 CheckFlag dw 0
-Check1Flag dw 0
 Duck1Dead dw 0
 Duck2Dead dw 0
 Algorithm db 0
@@ -1232,26 +1231,26 @@ Shot1Check proc
     push di
 
     mov ax, [DuckXcoordinate]
-    mov Duck1TL, ax
-    mov bx, ax
+    mov Duck1L, ax
+    mov bx, Duck1L
     add bx, 32
-    mov Duck1TR, bx
+    mov Duck1R, bx
     mov cx, [DuckYcoordinate]
-    mov Duck1BL, cx
-    mov dx, cx
+    mov Duck1T, cx
+    mov dx, Duck1T
     add dx, 29
-    mov Duck1BR, dx
+    mov Duck1B, dx
 
     mov ax, [Duck1Xcoordinate]
-    mov Duck2TL, ax
-    mov bx, ax
+    mov Duck2L, ax
+    mov bx, Duck2L
     add bx, 32
-    mov Duck2TR, bx
+    mov Duck2R, bx
     mov cx, [Duck1Ycoordinate]
-    mov Duck2BL, cx
-    mov dx, cx
+    mov Duck2T, cx
+    mov dx, Duck2T
     add dx, 29
-    mov Duck2BR, dx
+    mov Duck2B, dx
 
     mov si, [CrossHairXcoordinate]
     add si, 8
@@ -1259,51 +1258,60 @@ Shot1Check proc
     add di, 8
 
     mov CheckFlag, 0
-    mov Check1Flag, 0
 
-    cmp Duck1Dead, 1
-    je DoosriDuckChecks
+PehliDuckDead:
+    mov CheckFlag, 0
 
-    cmp Duck2Dead, 1
-    je PehliDuckChecks
-
-PehliDuckChecks:
-    cmp Duck1TL, si
+    cmp Duck1L, si
+    jg DoosriDuckDead
     inc CheckFlag
 
-    cmp Duck1TR, si
+    cmp Duck1R, si
+    jl DoosriDuckDead
     inc CheckFlag
 
-    cmp Duck1BL, di
+    cmp Duck1T, di
+    jg DoosriDuckDead
     inc CheckFlag
 
-    cmp Duck1BR, di
+    cmp Duck1B, di
+    jl DoosriDuckDead
     inc CheckFlag
 
     cmp CheckFlag, 4
-    inc ShotDead
-    mov Duck1Dead, 1
     je Shot1Success
-    jmp Shot1Failure
 
-DoosriDuckChecks:
-    cmp Duck2TL, si
-    inc Check1Flag
+DoosriDuckDead:
+    mov CheckFlag, 0
 
-    cmp Duck2TR, si
-    inc Check1Flag
+    cmp Duck2L, si
+    jg Shot1Failure
+    inc CheckFlag
 
-    cmp Duck2BL, di
-    inc Check1Flag
+    cmp Duck2R, si
+    jl Shot1Failure
+    inc CheckFlag
 
-    cmp Duck2BR, di
-    inc Check1Flag
+    cmp Duck2T, di
+    jg Shot1Failure
+    inc CheckFlag
 
-    cmp Check1Flag, 4
-    inc ShotDead
-    mov Duck2Dead, 1
+    cmp Duck2B, di
+    jl Shot1Failure
+    inc CheckFlag
+
+    cmp CheckFlag, 4
     je Shot2Success
-    jmp Shot1Failure
+
+Shot1Failure:
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    dec Bullets
+    ret
 
 Shot1Success:
     add Score, 1500
@@ -1323,11 +1331,13 @@ Shot1Success:
     call PrintScoreBullets
     call RemoveDuck
     call PrintDuckKill
-
-    cmp ShotDead, 2
-    je SuccessfullyShot
-    
-    ret
+    call Delay2Sec
+    call Delay2Sec
+    call DoubleDuckMoveEnd
+    pop cx
+    pop bx
+    pop dx
+    pop bp
 
 Shot2Success:
     add Score, 1500
@@ -1345,28 +1355,15 @@ Shot2Success:
     push cx
     dec Bullets
     call PrintScoreBullets
-    call Remove1Duck
+    call RemoveDuck
     call PrintDuck1Kill
-
-    cmp ShotDead, 2
-    je SuccessfullyShot
-    
-    ret
-
-SuccessfullyShot:
     call Delay2Sec
     call Delay2Sec
-    call DuckMoveEnd
-
-Shot1Failure:
-    pop di
-    pop si
-    pop dx
+    call DoubleDuckMoveEnd
     pop cx
     pop bx
-    pop ax
-    dec Bullets
-    ret
+    pop dx
+    pop bp
 
 Shot1Check endp
 
@@ -1394,6 +1391,30 @@ GameRound4:
 
 DuckMoveEnd endp
 
+DoubleDuckMoveEnd proc
+    push bx
+    push cx
+    call SetBackgroundGame
+    mov Direction, 1
+    inc Round
+    cmp Round, 1
+    je DoubleGameRound2
+    cmp Round, 2
+    je DoubleGameRound3
+    cmp Round, 3
+    je DoubleGameRound4
+
+DoubleGameRound2:
+    call DoubleGameKaRound2
+
+DoubleGameRound3:
+    call DoubleGameKaRound3
+
+DoubleGameRound4:
+    call DoubleGameKaRound4
+
+DoubleDuckMoveEnd endp
+
 GameKaRound2 proc
     pop cx
     pop bx
@@ -1407,6 +1428,24 @@ GameKaRound2 proc
     call SetBackgroundGame
     call DuckAlgo
 GameKaRound2 endp
+
+DoubleGameKaRound2 proc
+    pop cx
+    pop bx
+    mov bx, [OrignalDuckXcoordinate]
+    mov cx, [OrignalDuckYcoordinate]
+    mov [DuckXcoordinate], bx
+    mov [DuckYcoordinate], cx
+    mov si, [OrignalDuck1Xcoordinate]
+    mov di, [OrignalDuck1Ycoordinate]
+    mov [Duck1Xcoordinate], si
+    mov [Duck1Ycoordinate], di
+    call PrintGameRound2
+    call Delay2Sec
+    call Delay2Sec
+    call SetBackgroundGame
+    call Duck1Algo
+DoubleGameKaRound2 endp
 
 GameKaRound3 proc
     pop cx
@@ -1422,12 +1461,37 @@ GameKaRound3 proc
     call DuckAlgo
 GameKaRound3 endp
 
+DoubleGameKaRound3 proc
+    pop cx
+    pop bx
+    mov bx, [OrignalDuckXcoordinate]
+    mov cx, [OrignalDuckYcoordinate]
+    mov [DuckXcoordinate], bx
+    mov [DuckYcoordinate], cx
+    mov si, [OrignalDuck1Xcoordinate]
+    mov di, [OrignalDuck1Ycoordinate]
+    mov [Duck1Xcoordinate], si
+    mov [Duck1Ycoordinate], di
+    call PrintGameRound3
+    call Delay2Sec
+    call Delay2Sec
+    call SetBackgroundGame
+    call Duck1Algo
+DoubleGameKaRound3 endp
+
 GameKaRound4 proc
     pop cx
     pop bx
     call Exit1Key
 
 GameKaRound4 endp
+
+DoubleGameKaRound4 proc
+    pop cx
+    pop bx
+    call DoubleExit1Key
+
+DoubleGameKaRound4 endp
 
 DuckMove1 proc
     push ax
@@ -2289,6 +2353,655 @@ Exit5Key:
 
 DuckMove5 endp
 
+DoubleDuckMove1 proc
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+
+    mov [DuckXcoordinate], 155
+    mov [DuckYcoordinate], 116
+
+    mov bx, [DuckXcoordinate]
+    mov cx, [DuckYcoordinate]
+
+    mov [OrignalDuckXcoordinate], bx
+    mov [OrignalDuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], 205
+    mov [Duck1Ycoordinate], 116
+
+    mov si, [Duck1Xcoordinate]
+    mov di, [Duck1Ycoordinate]
+
+    mov [OrignalDuck1Xcoordinate], si
+    mov [OrignalDuck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], 155
+    mov [CrossHairYcoordinate], 85
+
+    mov bp, [CrossHairXcoordinate]
+    mov dx, [CrossHairYcoordinate]
+
+DoubleDuckMove1Loop:
+    cmp Direction, 1
+    je DoubleTop1Left
+    cmp Direction, 2
+    je DoubleBottom1Left
+    cmp Direction, 3
+    je DoubleBottom1Right
+    cmp Direction, 4
+    je DoubleTop1Right
+    cmp Direction, 5
+    je DoubleBottom1Right2
+    cmp Direction, 6
+    je DoubleBottom1Left2
+
+DoubleTop1Left:
+    sub bx, 2
+    sub cx, 2
+    sub di, 2
+    cmp cx, 0
+    jne DoubleKey1Check
+    mov Direction, 2
+    je DoubleDuckMove1Loop
+
+DoubleBottom1Left:
+    sub bx, 2
+    add cx, 2
+    add si, 2
+    add di, 2
+    cmp cx, 42
+    jne DoubleKey1Check
+    mov Direction, 3
+    je DoubleDuckMove1Loop
+
+DoubleBottom1Right:
+    add bx, 2
+    add cx, 2
+    sub si, 2
+    add di, 2
+    cmp cx, 114
+    jne DoubleKey1Check
+    mov Direction, 4
+    je BDoubleDuckMove1Loop
+
+DoubleTop1Right:
+    add bx, 2
+    sub cx, 2
+    sub si, 2
+    sub di, 2
+    cmp cx, 0
+    jne DoubleKey1Check
+    mov Direction, 5
+    je BDoubleDuckMove1Loop
+
+DoubleBottom1Right2:
+    add bx, 2
+    add cx, 2
+    add di, 2
+    cmp bx, 281
+    jne DoubleKey1Check
+    mov Direction, 6
+    je BDoubleDuckMove1Loop
+
+BDoubleDuckMove1Loop:
+    jmp DoubleDuckMove1Loop
+
+DoubleBottom1Left2:
+    dec bx
+    inc cx
+    dec si 
+    inc di
+    cmp cx, 115
+    jne DoubleKey1Check
+    je DoubleStop1Movement
+
+DoubleKey1Check:
+    mov ah, 01h
+    int 16h
+    jz DoubleNoKey1Press
+
+    mov ah, 00h
+    int 16h
+
+    cmp ax, 5000h
+    je DoubleDown1Arrow
+
+    cmp ax, 4800h
+    je DoubleUp1Arrow
+
+    cmp ax, 4D00h
+    je DoubleRight1Arrow
+
+    cmp ax, 4B00h
+    je DoubleLeft1Arrow
+
+    cmp al, 32
+    je DoubleShoot1Key
+
+    cmp al, 27
+    je DoubleExit1KeyDup
+
+DoubleNoKey1Press:
+    mov [DuckXcoordinate], bx
+    mov [DuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], si
+    mov [Duck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], bp
+    mov [CrossHairYcoordinate], dx
+
+    push bp
+    push dx
+    push bx
+    push cx
+    push si
+    push di
+    call PrintScoreBullets
+    call PrintDuck
+    call Print1Duck
+    call PrintCrossHair
+    call Delay50ms
+    call RemoveCrossHair
+    call RemoveDuck
+    call Remove1Duck
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop dx
+    pop bp
+
+    cmp Bullets, 0
+    je DoubleStop1Movement
+
+    cmp Bullets, 10
+    jg DoubleStop1Movement
+
+    jmp DoubleDuckMove1Loop
+
+DoubleStop1Movement:
+    call DoubleDuckMoveEnd
+
+DoubleDown1Arrow:
+    jmp DoubleDownArrow1Key
+
+DoubleUp1Arrow:
+    jmp DoubleUpArrow1Key
+
+DoubleRight1Arrow:
+    jmp DoubleRightArrow1Key
+
+DoubleLeft1Arrow:
+    jmp DoubleLeftArrow1Key
+
+DoubleExit1KeyDup:
+    jmp DoubleExit1Key
+
+DoubleShoot1Key:
+    call Shot1Check
+    jmp DoubleKey1Check
+
+DoubleBoundary1Restriction:
+    jmp DoubleDuckMove1Loop
+
+DoubleDownArrow1Key:
+    cmp CrossHairYcoordinate, 125
+    jge DoubleBoundary1Restriction
+    add dx, 8
+    jmp DoubleDuckMove1Loop
+
+DoubleUpArrow1Key:
+    cmp CrossHairYcoordinate, 5
+    jle DoubleBoundary1Restriction
+    sub dx, 8
+    jmp DoubleDuckMove1Loop
+
+DoubleRightArrow1Key:
+    cmp CrossHairXcoordinate, 300
+    jge DoubleBoundary1Restriction
+    add bp, 8
+    jmp DoubleDuckMove1Loop
+
+DoubleLeftArrow1Key:
+    cmp CrossHairXcoordinate, 5
+    jle DoubleBoundary1Restriction
+    sub bp, 8
+    jmp DoubleDuckMove1Loop
+
+DoubleExit1Key:
+    call GotoPage7
+
+DoubleDuckMove1 endp
+
+DoubleDuckMove2 proc
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+
+    mov [DuckXcoordinate], 35
+    mov [DuckYcoordinate], 116
+
+    mov bx, [DuckXcoordinate]
+    mov cx, [DuckYcoordinate]
+
+    mov [OrignalDuckXcoordinate], bx
+    mov [OrignalDuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], 175
+    mov [Duck1Ycoordinate], 116
+
+    mov si, [Duck1Xcoordinate]
+    mov di, [Duck1Ycoordinate]
+
+    mov [OrignalDuck1Xcoordinate], si
+    mov [OrignalDuck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], 155
+    mov [CrossHairYcoordinate], 85
+
+    mov bp, [CrossHairXcoordinate]
+    mov dx, [CrossHairYcoordinate]
+
+DoubleDuckMove2Loop:
+    cmp Direction, 1
+    je DoubleTop2Left
+    cmp Direction, 2
+    je DoubleBottom2Left
+    cmp Direction, 3
+    je DoubleBottom2Right
+    cmp Direction, 4
+    je DoubleTop2Right
+    cmp Direction, 5
+    je DoubleBottom2Right2
+
+DoubleTop2Left:
+    sub bx, 2
+    sub cx, 2
+    add si, 2
+    sub di, 1
+    cmp bx, 0
+    jge DoubleKey2Check
+    mov Direction, 2
+    je DoubleDuckMove2Loop
+
+DoubleBottom2Left:
+    add bx, 2
+    sub si, 2
+    sub di, 1
+    cmp bx, 115
+    jl DoubleKey2Check
+    mov Direction, 3
+    je DoubleDuckMove2Loop
+
+DoubleBottom2Right:
+    add bx, 2
+    sub cx, 2
+    add di, 2
+    cmp bx, 165
+    jle DoubleKey2Check
+    mov Direction, 4
+    je BDoubleDuckMove2Loop
+
+DoubleTop2Right:
+    add bx, 2
+    add cx, 2
+    sub si, 2
+    cmp bx, 200
+    jle DoubleKey2Check
+    mov Direction, 5
+    je BDoubleDuckMove2Loop
+
+DoubleBottom2Right2:
+    sub bx, 2
+    add cx, 2
+    sub si, 2
+    sub di, 2
+    cmp cx, 116
+    jl DoubleKey2Check
+    mov Direction, 6
+    je DoubleStop2Movement
+
+BDoubleDuckMove2Loop:
+    jmp DoubleDuckMove2Loop
+
+DoubleKey2Check:
+    mov ah, 01h
+    int 16h
+    jz DoubleNoKey2Press
+
+    mov ah, 00h
+    int 16h
+
+    cmp ax, 5000h
+    je DoubleDown2Arrow
+
+    cmp ax, 4800h
+    je DoubleUp2Arrow
+
+    cmp ax, 4D00h
+    je DoubleRight2Arrow
+
+    cmp ax, 4B00h
+    je DoubleLeft2Arrow
+
+    cmp al, 32
+    je DoubleShoot2Key
+
+    cmp al, 27
+    je DoubleExit2KeyDup
+
+DoubleNoKey2Press:
+    mov [DuckXcoordinate], bx
+    mov [DuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], si
+    mov [Duck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], bp
+    mov [CrossHairYcoordinate], dx
+
+    push bp
+    push dx
+    push bx
+    push cx
+    push si
+    push di
+    call PrintScoreBullets
+    call PrintDuck
+    call Print1Duck
+    call PrintCrossHair
+    call Delay50ms
+    call RemoveCrossHair
+    call RemoveDuck
+    call Remove1Duck
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop dx
+    pop bp
+
+    cmp Bullets, 0
+    je DoubleStop2Movement
+
+    cmp Bullets, 10
+    jg DoubleStop2Movement
+
+    jmp DoubleDuckMove2Loop
+
+DoubleStop2Movement:
+    call DoubleDuckMoveEnd
+
+DoubleDown2Arrow:
+    jmp DoubleDownArrow2Key
+
+DoubleUp2Arrow:
+    jmp DoubleUpArrow2Key
+
+DoubleRight2Arrow:
+    jmp DoubleRightArrow2Key
+
+DoubleLeft2Arrow:
+    jmp DoubleLeftArrow2Key
+
+DoubleExit2KeyDup:
+    jmp DoubleExit2Key
+
+DoubleShoot2Key:
+    call Shot1Check
+    jmp DoubleKey2Check
+
+DoubleBoundary2Restriction:
+    jmp DoubleDuckMove2Loop
+
+DoubleDownArrow2Key:
+    cmp CrossHairYcoordinate, 125
+    jge DoubleBoundary2Restriction
+    add dx, 8
+    jmp DoubleDuckMove2Loop
+
+DoubleUpArrow2Key:
+    cmp CrossHairYcoordinate, 5
+    jle DoubleBoundary2Restriction
+    sub dx, 8
+    jmp DoubleDuckMove2Loop
+
+DoubleRightArrow2Key:
+    cmp CrossHairXcoordinate, 300
+    jge DoubleBoundary2Restriction
+    add bp, 8
+    jmp DoubleDuckMove2Loop
+
+DoubleLeftArrow2Key:
+    cmp CrossHairXcoordinate, 5
+    jle DoubleBoundary2Restriction
+    sub bp, 8
+    jmp DoubleDuckMove2Loop
+
+DoubleExit2Key:
+    call GotoPage7
+
+DoubleDuckMove2 endp
+
+DoubleDuckMove3 proc
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+
+    mov [DuckXcoordinate], 225
+    mov [DuckYcoordinate], 116
+
+    mov bx, [DuckXcoordinate]
+    mov cx, [DuckYcoordinate]
+
+    mov [OrignalDuckXcoordinate], bx
+    mov [OrignalDuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], 115
+    mov [Duck1Ycoordinate], 116
+
+    mov si, [Duck1Xcoordinate]
+    mov di, [Duck1Ycoordinate]
+
+    mov [OrignalDuck1Xcoordinate], si
+    mov [OrignalDuck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], 155
+    mov [CrossHairYcoordinate], 85
+
+    mov bp, [CrossHairXcoordinate]
+    mov dx, [CrossHairYcoordinate]
+
+DoubleDuckMove3Loop:
+    cmp Direction, 1
+    je DoubleTop3Left
+    cmp Direction, 2
+    je DoubleBottom3Left
+    cmp Direction, 3
+    je DoubleBottom3Right
+    cmp Direction, 4
+    je DoubleTop3Right
+    cmp Direction, 5
+    je DoubleBottom3Right2
+
+DoubleTop3Left:
+    sub cx, 2
+    sub bx, 2
+    sub di, 2
+    cmp bx, 165
+    jg DoubleKey3Check
+    mov Direction, 2
+    je DoubleDuckMove3Loop
+
+DoubleBottom3Left:
+    sub cx, 2
+    sub si, 2
+    sub di, 2
+    cmp cx, 20
+    jg DoubleKey3Check
+    mov Direction, 3
+    je DoubleDuckMove3Loop
+
+DoubleBottom3Right:
+    add bx, 2
+    sub si, 2
+    cmp bx, 200
+    jl DoubleKey3Check
+    mov Direction, 4
+    je BDoubleDuckMove3Loop
+
+DoubleTop3Right:
+    sub bx, 2
+    add cx, 2
+    add si, 2
+    cmp cx, 95
+    jl DoubleKey3Check
+    mov Direction, 5
+    je BDoubleDuckMove3Loop
+
+DoubleBottom3Right2:
+    sub cx, 2
+    sub bx, 2
+    add di, 2
+    add si, 2
+    cmp cx, 0
+    jg DoubleKey3Check
+    mov Direction, 6
+    je DoubleStop3Movement
+
+BDoubleDuckMove3Loop:
+    jmp DoubleDuckMove3Loop
+
+DoubleKey3Check:
+    mov ah, 01h
+    int 16h
+    jz DoubleNoKey3Press
+
+    mov ah, 00h
+    int 16h
+
+    cmp ax, 5000h
+    je DoubleDown3Arrow
+
+    cmp ax, 4800h
+    je DoubleUp3Arrow
+
+    cmp ax, 4D00h
+    je DoubleRight3Arrow
+
+    cmp ax, 4B00h
+    je DoubleLeft3Arrow
+
+    cmp al, 32
+    je DoubleShoot3Key
+
+    cmp al, 27
+    je DoubleExit3KeyDup
+
+DoubleNoKey3Press:
+    mov [DuckXcoordinate], bx
+    mov [DuckYcoordinate], cx
+
+    mov [Duck1Xcoordinate], si
+    mov [Duck1Ycoordinate], di
+
+    mov [CrossHairXcoordinate], bp
+    mov [CrossHairYcoordinate], dx
+
+    push bp
+    push dx
+    push bx
+    push cx
+    push si
+    push di
+    call PrintScoreBullets
+    call PrintDuck
+    call Print1Duck
+    call PrintCrossHair
+    call Delay50ms
+    call RemoveCrossHair
+    call RemoveDuck
+    call Remove1Duck
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop dx
+    pop bp
+
+    cmp Bullets, 0
+    je DoubleStop3Movement
+
+    cmp Bullets, 10
+    jg DoubleStop3Movement
+
+    jmp DoubleDuckMove3Loop
+
+DoubleStop3Movement:
+    call DoubleDuckMoveEnd
+
+DoubleDown3Arrow:
+    jmp DoubleDownArrow3Key
+
+DoubleUp3Arrow:
+    jmp DoubleUpArrow3Key
+
+DoubleRight3Arrow:
+    jmp DoubleRightArrow3Key
+
+DoubleLeft3Arrow:
+    jmp DoubleLeftArrow3Key
+
+DoubleExit3KeyDup:
+    jmp DoubleExit3Key
+
+DoubleShoot3Key:
+    call Shot1Check
+    jmp DoubleKey3Check
+
+DoubleBoundary3Restriction:
+    jmp DoubleDuckMove3Loop
+
+DoubleDownArrow3Key:
+    cmp CrossHairYcoordinate, 125
+    jge DoubleBoundary3Restriction
+    add dx, 8
+    jmp DoubleDuckMove3Loop
+
+DoubleUpArrow3Key:
+    cmp CrossHairYcoordinate, 5
+    jle DoubleBoundary3Restriction
+    sub dx, 8
+    jmp DoubleDuckMove3Loop
+
+DoubleRightArrow3Key:
+    cmp CrossHairXcoordinate, 300
+    jge DoubleBoundary3Restriction
+    add bp, 8
+    jmp DoubleDuckMove3Loop
+
+DoubleLeftArrow3Key:
+    cmp CrossHairXcoordinate, 5
+    jle DoubleBoundary3Restriction
+    sub bp, 8
+    jmp DoubleDuckMove3Loop
+
+DoubleExit3Key:
+    call GotoPage7
+
+DoubleDuckMove3 endp
+
 DuckAlgo proc
     mov Shot, 0
     mov Bullets, 5
@@ -2328,10 +3041,42 @@ Movement5:
     ret
 DuckAlgo endp
 
+Duck1Algo proc
+    mov Shot, 0
+    mov Bullets, 2
+    mov ShotDead, 0
+    mov Algorithm, 0
+    mov CheckFlag, 0
+    call Generate1Random  
+
+    cmp Algorithm, 0
+    je DoubleMovement1
+    cmp Algorithm, 1
+    je DoubleMovement2
+    cmp Algorithm, 2
+    je DoubleMovement3
+
+DoubleMovement1:
+    call DoubleDuckMove1
+
+DoubleMovement2:
+    call DoubleDuckMove2
+
+DoubleMovement3:
+    call DoubleDuckMove3
+
+    ret
+Duck1Algo endp
+
 GameLoop proc near
     call DuckAlgo
 
 GameLoop endp
+
+Game1Loop proc near
+    call Duck1Algo
+
+Game1Loop endp
 
 GenerateRandom proc
     push ax
@@ -2353,6 +3098,27 @@ GenerateRandom proc
     pop ax
     ret
 GenerateRandom endp
+
+Generate1Random proc
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov ah, 2Ch
+    int 21h
+    mov ah, 0       
+    mov al, dl      
+    mov bl, 3
+    div bl          
+    mov Algorithm, ah
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+Generate1Random endp
 
 Delay50ms proc near 
     push ax
@@ -2976,7 +3742,7 @@ PrintTitleP5 proc near
 PrintTitleP5 endp
 
 PrintTitleP6 proc near
-    call GameLoop 
+    call Game1Loop 
 
     ret
 PrintTitleP6 endp
@@ -2999,7 +3765,6 @@ PrintTitleP7 proc near
 PrintTitleP7 endp
 
 GotoPage1 proc near
-;    call Delay2Sec
     call ClearScreen
     call SetBackgroundBlack
     call PrintTitleP1
@@ -3009,7 +3774,6 @@ GotoPage1 proc near
 GotoPage1 endp
     
 GotoPage2 proc near
-;    call Delay2Sec
     call ClearScreen
     call SetBackgroundBlack
     call PrintTitleP2
@@ -3017,7 +3781,6 @@ GotoPage2 proc near
 GotoPage2 endp
 
 GotoPage3 proc near
-;    call Delay2Sec
     call ClearScreen
     call SetBackgroundBlack
     call PrintTitleP3
@@ -3025,7 +3788,6 @@ GotoPage3 proc near
 GotoPage3 endp
 
 GotoPage4 proc near
-;    call Delay2Sec
     call ClearScreen
     call SetBackgroundBlack
     call PrintTitleP4
@@ -3033,7 +3795,6 @@ GotoPage4 proc near
 GotoPage4 endp
 
 GotoPage5 proc near
-   call Delay2Sec
    call ClearScreen
    call SetBackgroundBlack
    call PrintTitleInstructions
@@ -3049,12 +3810,11 @@ GotoPage5 proc near
 GotoPage5 endp
 
 GotoPage6 proc near
-;    call Delay2Sec
-;    call ClearScreen
-;    call SetBackgroundBlack
-;    call PrintTitleInstructions
-;    call Delay2Sec
-;    call Delay2Sec   
+   call ClearScreen
+   call SetBackgroundBlack
+   call PrintTitleInstructions
+   call Delay2Sec
+   call Delay2Sec   
    call SetBackgroundGame
    call PrintGameRound1   
    call Delay2Sec
@@ -3065,7 +3825,6 @@ GotoPage6 proc near
 GotoPage6 endp
 
 GotoPage7 proc near
-;    call Delay2Sec
     call SetBackgroundBlack
     call PrintTitleP7
     call Delay2Sec
